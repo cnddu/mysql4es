@@ -3,6 +3,7 @@ import json
 import sys
 import mysql.connector
 from datetime import datetime
+import schedule
 from elasticsearch import Elasticsearch,NotFoundError, RequestsHttpConnection, serializer, compat, exceptions
 
 class JSONSerializerPython2(serializer.JSONSerializer):
@@ -17,20 +18,77 @@ class JSONSerializerPython2(serializer.JSONSerializer):
 
 es = Elasticsearch(serializer=JSONSerializerPython2())
 
+syncid_user = 0
+
 
 cnx = mysql.connector.connect(user='root', host='121.42.235.121', password='lovepan_0808', database='love2io')
 cursor = cnx.cursor()
+
+#init for user table
+manageUserTriggers = ("DROP TABLE IF EXISTS synces_user")
+cursor.execute(manageUserTriggers)
+
+manageUserTriggers = ("CREATE TABLE synces_user (\
+  id int(11) NOT NULL AUTO_INCREMENT,\
+  recordid int(11),\
+  timestamp int unsigned,\
+  opcode tinyint,\
+  username text,\
+  nickname text,\
+  avatar text,\
+  description text,\
+  PRIMARY KEY (id)\
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8")
+cursor.execute(manageUserTriggers)
+
+
+manageUserTriggers = ("DROP TRIGGER IF EXISTS synces_user_insert")
+cursor.execute(manageUserTriggers)
+
+manageUserTriggers = ("CREATE TRIGGER synces_user_insert \
+AFTER INSERT ON user \
+FOR EACH ROW \
+  INSERT INTO synces_user (recordid,timestamp, opcode, username, nickname, avatar, description) \
+  VALUES (NEW.id, UNIX_TIMESTAMP(), 1, NEW.username, NEW.nickname, NEW.avatar, NEW.description) \
+")
+cursor.execute(manageUserTriggers)
+
+manageUserTriggers = ("DROP TRIGGER IF EXISTS synces_user_update")
+cursor.execute(manageUserTriggers)
+
+manageUserTriggers = ("CREATE TRIGGER synces_user_update \
+AFTER UPDATE ON user \
+FOR EACH ROW \
+  INSERT INTO synces_user (recordid,timestamp, opcode, username, nickname, avatar, description) \
+  VALUES (NEW.id, UNIX_TIMESTAMP(), 2, NEW.username, NEW.nickname, NEW.avatar, NEW.description) \
+")
+cursor.execute(manageUserTriggers)
+
+manageUserTriggers = ("DROP TRIGGER IF EXISTS synces_user_delete")
+cursor.execute(manageUserTriggers)
+
+manageUserTriggers = ("CREATE TRIGGER synces_user_delete \
+BEFORE DELETE ON user \
+FOR EACH ROW \
+  INSERT INTO synces_user (recordid,timestamp, opcode, username, nickname, avatar, description) \
+  VALUES (OLD.id, UNIX_TIMESTAMP(), 3, OLD.username, OLD.nickname, OLD.avatar, OLD.description) \
+")
+cursor.execute(manageUserTriggers)
+
 
 queryRecords = ("SELECT * FROM user")
 cursor.execute(queryRecords)
 records = cursor.fetchall()
 
 esindex = "cnddu"
+#delete and recreate index
 res = es.indices.exists(index=esindex)
 print('check index exists: %s => %s' %(esindex,res))
-if (res == False):
-    res = es.indices.create(index=esindex)
-    print('create index: %s => %s' %(esindex,res))
+if (res == True):
+    res = es.indices.delete(index=esindex)
+    print('delete index: %s => %s' %(esindex,res))
+res = es.indices.create(index=esindex)
+print('create index: %s => %s' %(esindex,res))
 
 estype = "user"
 res = es.indices.exists_type(index=esindex,doc_type=estype)
@@ -85,6 +143,7 @@ if (records is not None):
             docexist = e.info['found']
         #time.sleep(10000);
         doc = {
+                'userid':recordItem[0],
                 'username':recordItem[1],
                 'nickname':recordItem[7],
                 'avatar':recordItem[2],
@@ -98,3 +157,48 @@ cnx.commit()
 cursor.close()
 cnx.close()
 
+def job():
+    global syncid_user
+    cnx = mysql.connector.connect(user='root', host='121.42.235.121', password='lovepan_0808', database='love2io')
+    cursor = cnx.cursor()
+
+    estype = "user"
+    print("working on sync table user => use syncid %d" %syncid_user)
+    
+    querySync = ("SELECT * FROM synces_user WHERE id>"+str(syncid_user)+" ORDER BY id ASC")
+    cursor.execute(querySync)
+    records = cursor.fetchall()
+    print (records)
+
+    if (len(records) > 0):
+        for recordItem in records:
+            print(recordItem)
+            if (recordItem[3] == 1) or (recordItem[3] == 2): #insert
+                doc = {
+                    'userid':recordItem[1],
+                    'username':recordItem[4],
+                    'nickname':recordItem[5],
+                    'avatar':recordItem[6],
+                    'description':recordItem[7],
+                }
+                res = es.index(index=esindex, doc_type=estype, id=recordItem[1], body=doc)
+                print('add/update user record %s => %s' %(recordItem[1],res))
+            elif (recordItem[3] == 3): #delete
+                try:
+                    res = es.delete(index=esindex, doc_type=estype, id=recordItem[1])
+                    print('delete doc %s => %s' %(recordItem[1],res))
+                except NotFoundError, e:
+                    print('doc %s found? %s' %(recordItem[1],e.info['found']))
+
+        syncid_user = recordItem[0]
+        print ("update sync id: %d" %syncid_user)
+
+    cnx.commit()
+    cursor.close()
+    cnx.close()
+
+schedule.every(10).seconds.do(job)
+
+while True:
+    schedule.run_pending()
+    time.sleep(1)
