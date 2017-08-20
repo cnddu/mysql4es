@@ -19,9 +19,14 @@ class JSONSerializerPython2(serializer.JSONSerializer):
 es = Elasticsearch(serializer=JSONSerializerPython2())
 
 syncid_user = 0
+syncid_post = 0
 
+dbhost = 'your host ip'
+dbuser = 'user name'
+dbpwd = 'passwd'
+dbname = 'db name'
 
-cnx = mysql.connector.connect(user='root', host='121.42.235.121', password='lovepan_0808', database='love2io')
+cnx = mysql.connector.connect(user=dbuser, host=dbhost, password=dbpwd, database=dbname)
 cursor = cnx.cursor()
 
 #init for user table
@@ -158,8 +163,8 @@ cursor.close()
 cnx.close()
 
 def job():
-    global syncid_user
-    cnx = mysql.connector.connect(user='root', host='121.42.235.121', password='lovepan_0808', database='love2io')
+    global syncid_user,dbuser,dbhost,dbpwd,dbname
+    cnx = mysql.connector.connect(user=dbuser, host=dbhost, password=dbpwd, database=dbname)
     cursor = cnx.cursor()
 
     estype = "user"
