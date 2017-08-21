@@ -14,6 +14,19 @@ CREATE TABLE `synces_user` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 
+DROP TABLE IF EXISTS `synces_post`;
+CREATE TABLE `synces_post` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+   recordid int(11),
+  `timestamp` int unsigned,
+  `opcode` tinyint,
+  `title` longtext,
+  `description` longtext,
+  `cover` longtext,
+  `name` longtext,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
+
 opcode:
 1 - insert;
 2 - update;
