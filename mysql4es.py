@@ -23,10 +23,10 @@ esindex = "cnddu"
 syncid_user = 0
 syncid_post = 0
 
-dbhost = 'your host ip'
-dbuser = 'user name'
-dbpwd = 'passwd'
-dbname = 'db name'
+dbhost = 'db host name'
+dbuser = 'db user'
+dbpwd = 'db pwd'
+dbname = 'your db name'
 
 def reset_esindex(esindex):
     global es 
