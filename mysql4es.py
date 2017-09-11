@@ -23,10 +23,10 @@ esindex = "cnddu"
 syncid_user = 0
 syncid_post = 0
 
-dbhost = 'db host name'
-dbuser = 'db user'
-dbpwd = 'db pwd'
-dbname = 'your db name'
+dbhost = 'rm-bp18giw6ai77y6171o.mysql.rds.aliyuncs.com'
+dbuser = 'root'
+dbpwd = 'Glj@2017'
+dbname = 'love2io'
 
 def reset_esindex(esindex):
     global es 
@@ -281,7 +281,7 @@ def init_post(esindex):
 
 def job_user():
     global syncid_user,dbuser,dbhost,dbpwd,dbname,es
-    cnx = mysql.connector.connect(user=dbuser, host=dbhost, password=dbpwd, database=dbname)
+    cnx = mysql.connector.connect(user=dbuser, host=dbhost, password=dbpwd, database=dbname, connection_timeout=100)
     cursor = cnx.cursor()
 
     estype = "user"
@@ -320,7 +320,7 @@ def job_user():
 
 def job_post():
     global syncid_post,dbuser,dbhost,dbpwd,dbname,es
-    cnx = mysql.connector.connect(user=dbuser, host=dbhost, password=dbpwd, database=dbname)
+    cnx = mysql.connector.connect(user=dbuser, host=dbhost, password=dbpwd, database=dbname, connection_timeout=100)
     cursor = cnx.cursor()
 
     estype = "post"
