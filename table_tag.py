@@ -39,7 +39,7 @@ def init_tag(esindex,es,syncid_tag,dbuser,dbhost,dbpwd,dbname):
     cursor.execute(manageTagTriggers)
 
     manageTagTriggers = ("CREATE TRIGGER synces_tag_insert \
-        AFTER INSERT ON tag \
+        AFTER INSERT ON a2tag \
         FOR EACH ROW \
         INSERT INTO synces_tag (recordid,timestamp, opcode, name, english, description,avatar,cover,homepage,tag_type,parent_id,category_id,point_to,hidden,post_num,follow_num,star_num) \
         VALUES (NEW.id, UNIX_TIMESTAMP(), 1, NEW.name, NEW.english, NEW.description, NEW.avatar,NEW.cover,NEW.homepage,NEW.tag_type,NEW.parent_id,NEW.category_id,NEW.point_to,NEW.hidden,NEW.post_num,NEW.follow_num,NEW.star_num) \
@@ -50,7 +50,7 @@ def init_tag(esindex,es,syncid_tag,dbuser,dbhost,dbpwd,dbname):
     cursor.execute(manageTagTriggers)
 
     manageTagTriggers = ("CREATE TRIGGER synces_tag_update \
-        AFTER UPDATE ON tag \
+        AFTER UPDATE ON a2tag \
         FOR EACH ROW \
         INSERT INTO synces_tag (recordid,timestamp, opcode, name, english, description,avatar,cover,homepage,tag_type,parent_id,category_id,point_to,hidden,post_num,follow_num,star_num) \
         VALUES (NEW.id, UNIX_TIMESTAMP(), 2, NEW.name, NEW.english, NEW.description, NEW.avatar,NEW.cover,NEW.homepage,NEW.tag_type,NEW.parent_id,NEW.category_id,NEW.point_to,NEW.hidden,NEW.post_num,NEW.follow_num,NEW.star_num) \
@@ -61,14 +61,14 @@ def init_tag(esindex,es,syncid_tag,dbuser,dbhost,dbpwd,dbname):
     cursor.execute(manageTagTriggers)
 
     manageTagTriggers = ("CREATE TRIGGER synces_tag_delete \
-        BEFORE DELETE ON tag \
+        BEFORE DELETE ON a2tag \
         FOR EACH ROW \
         INSERT INTO synces_tag (recordid,timestamp, opcode, name, english, description,avatar,cover,homepage,tag_type,parent_id,category_id,point_to,hidden,post_num,follow_num,star_num) \
         VALUES (OLD.id, UNIX_TIMESTAMP(), 3, OLD.name, OLD.english, OLD.description,OLD.avatar,OLD.cover,OLD.homepage,OLD.tag_type,OLD.parent_id,OLD.category_id,OLD.point_to,OLD.hidden,OLD.post_num,OLD.follow_num,OLD.star_num) \
     ")
     cursor.execute(manageTagTriggers)
 
-    queryRecords = ("SELECT * FROM tag")
+    queryRecords = ("SELECT * FROM a2tag")
     cursor.execute(queryRecords)
     records = cursor.fetchall()
 
@@ -111,7 +111,7 @@ def init_tag(esindex,es,syncid_tag,dbuser,dbhost,dbpwd,dbname):
         if (records is not None):
             for recordItem in records:
                 doc = {
-                    'tagid':recordItem[0],
+                    'id':recordItem[0],
                     'name':recordItem[1],
                     'english':recordItem[2],
                     'description':recordItem[3],
@@ -136,7 +136,7 @@ def init_tag(esindex,es,syncid_tag,dbuser,dbhost,dbpwd,dbname):
 
     return syncid_tag
 
-def job_tag(syncid_tag,dbuser,dbhost,dbpwd,dbname,es):
+def job_tag(syncid_tag,dbuser,dbhost,dbpwd,dbname,es,esindex):
     cnx = mysql.connector.connect(user=dbuser, host=dbhost, password=dbpwd, database=dbname, connection_timeout=100)
     cursor = cnx.cursor()
 
@@ -153,7 +153,7 @@ def job_tag(syncid_tag,dbuser,dbhost,dbpwd,dbname,es):
             print(recordItem)
             if (recordItem[3] == 1) or (recordItem[3] == 2): #insert
                 doc = {
-                    'tagid':recordItem[1],
+                    'id':recordItem[1],
                     'name':recordItem[4],
                     'english':recordItem[5],
                     'description':recordItem[6],

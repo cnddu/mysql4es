@@ -23,7 +23,6 @@ def init_post(esindex,es,syncid_post,dbuser,dbhost,dbpwd,dbname):
       name longtext,\
       repo longtext,\
       fork longtext,\
-      path longtext,\
       post_type longtext,\
       author_id bigint(20),\
       author_username longtext,\
@@ -39,10 +38,10 @@ def init_post(esindex,es,syncid_post,dbuser,dbhost,dbpwd,dbname):
     cursor.execute(managePostTriggers)
 
     managePostTriggers = ("CREATE TRIGGER synces_post_insert \
-        AFTER INSERT ON post \
+        AFTER INSERT ON a2post \
         FOR EACH ROW \
-        INSERT INTO synces_post (recordid,timestamp, opcode, title, description,cover,name,repo,fork,path,post_type,author_id,author_username,star_num,reply_num,elite,created) \
-        VALUES (NEW.id, UNIX_TIMESTAMP(), 1, NEW.title, NEW.description, NEW.cover, NEW.name, NEW.repo,NEW.fork,NEW.path,NEW.post_type,NEW.author_id,NEW.author_username,NEW.star_num,NEW.reply_num,NEW.elite,NEW.created) \
+        INSERT INTO synces_post (recordid,timestamp, opcode, title, description,cover,name,repo,fork,post_type,author_id,author_username,star_num,reply_num,elite,created) \
+        VALUES (NEW.id, UNIX_TIMESTAMP(), 1, NEW.title, NEW.description, NEW.cover, NEW.name, NEW.repo,NEW.fork,NEW.post_type,NEW.author_id,NEW.author_username,NEW.star_num,NEW.reply_num,NEW.elite,NEW.created) \
     ")
     cursor.execute(managePostTriggers)
 
@@ -50,10 +49,10 @@ def init_post(esindex,es,syncid_post,dbuser,dbhost,dbpwd,dbname):
     cursor.execute(managePostTriggers)
 
     managePostTriggers = ("CREATE TRIGGER synces_post_update \
-        AFTER UPDATE ON post \
+        AFTER UPDATE ON a2post \
         FOR EACH ROW \
-        INSERT INTO synces_post (recordid,timestamp, opcode, title, description,cover,name,repo,fork,path,post_type,author_id,author_username,star_num,reply_num,elite,created) \
-        VALUES (NEW.id, UNIX_TIMESTAMP(), 2, NEW.title, NEW.description, NEW.cover, NEW.name, NEW.repo,NEW.fork,NEW.path,NEW.post_type,NEW.author_id,NEW.author_username,NEW.star_num,NEW.reply_num,NEW.elite,NEW.created) \
+        INSERT INTO synces_post (recordid,timestamp, opcode, title, description,cover,name,repo,fork,post_type,author_id,author_username,star_num,reply_num,elite,created) \
+        VALUES (NEW.id, UNIX_TIMESTAMP(), 2, NEW.title, NEW.description, NEW.cover, NEW.name, NEW.repo,NEW.fork,NEW.post_type,NEW.author_id,NEW.author_username,NEW.star_num,NEW.reply_num,NEW.elite,NEW.created) \
     ")
     cursor.execute(managePostTriggers)
 
@@ -61,14 +60,14 @@ def init_post(esindex,es,syncid_post,dbuser,dbhost,dbpwd,dbname):
     cursor.execute(managePostTriggers)
 
     managePostTriggers = ("CREATE TRIGGER synces_post_delete \
-        BEFORE DELETE ON post \
+        BEFORE DELETE ON a2post \
         FOR EACH ROW \
-        INSERT INTO synces_post (recordid,timestamp, opcode, title, description,cover,name,repo,fork,path,post_type,author_id,author_username,star_num,reply_num,elite,created) \
-        VALUES (OLD.id, UNIX_TIMESTAMP(), 3, OLD.title, OLD.description, OLD.cover, OLD.name,OLD.repo,OLD.fork,OLD.path,OLD.post_type,OLD.author_id,OLD.author_username,OLD.star_num,OLD.reply_num,OLD.elite,OLD.created) \
+        INSERT INTO synces_post (recordid,timestamp, opcode, title, description,cover,name,repo,fork,post_type,author_id,author_username,star_num,reply_num,elite,created) \
+        VALUES (OLD.id, UNIX_TIMESTAMP(), 3, OLD.title, OLD.description, OLD.cover, OLD.name,OLD.repo,OLD.fork,OLD.post_type,OLD.author_id,OLD.author_username,OLD.star_num,OLD.reply_num,OLD.elite,OLD.created) \
     ")
     cursor.execute(managePostTriggers)
 
-    queryRecords = ("SELECT * FROM post")
+    queryRecords = ("SELECT * FROM a2post")
     cursor.execute(queryRecords)
     records = cursor.fetchall()
 
@@ -115,21 +114,20 @@ def init_post(esindex,es,syncid_post,dbuser,dbhost,dbpwd,dbname):
         if (records is not None):
             for recordItem in records:
                 doc = {
-                    'postid':recordItem[0],
+                    'id':recordItem[0],
                     'title':recordItem[1],
                     'description':recordItem[2],
                     'cover':recordItem[3],
                     'name':recordItem[4],
                     'repo':recordItem[5],
                     'fork':recordItem[6],
-                    'path':recordItem[7],
-                    'post_type':recordItem[8],
-                    'author_id':recordItem[9],
-                    'author_username':recordItem[10],
-                    'star_num':recordItem[11],
-                    'reply_num':recordItem[12],
-                    'elite':recordItem[13],
-                    'created':recordItem[14]
+                    'post_type':recordItem[7],
+                    'author_id':recordItem[8],
+                    'author_username':recordItem[9],
+                    'star_num':recordItem[12],
+                    'reply_num':recordItem[13],
+                    'elite':recordItem[14],
+                    'created':recordItem[15]
                 }
                 res = es.index(index=esindex, doc_type=estype, id=recordItem[0], body=doc)
                 print('add/update post record %s => %s' %(recordItem[0],res))
@@ -140,7 +138,7 @@ def init_post(esindex,es,syncid_post,dbuser,dbhost,dbpwd,dbname):
 
     return syncid_post
 
-def job_post(syncid_post,dbuser,dbhost,dbpwd,dbname,es):
+def job_post(syncid_post,dbuser,dbhost,dbpwd,dbname,es,esindex):
     cnx = mysql.connector.connect(user=dbuser, host=dbhost, password=dbpwd, database=dbname, connection_timeout=100)
     cursor = cnx.cursor()
 
@@ -157,21 +155,20 @@ def job_post(syncid_post,dbuser,dbhost,dbpwd,dbname,es):
             print(recordItem)
             if (recordItem[3] == 1) or (recordItem[3] == 2): #insert
                 doc = {
-                    'postid':recordItem[1],
+                    'id':recordItem[1],
                     'title':recordItem[4],
                     'description':recordItem[5],
                     'cover':recordItem[6],
                     'name':recordItem[7],
                     'repo':recordItem[8],
                     'fork':recordItem[9],
-                    'path':recordItem[10],
-                    'post_type':recordItem[11],
-                    'author_id':recordItem[12],
-                    'author_username':recordItem[13],
-                    'star_num':recordItem[14],
-                    'reply_num':recordItem[15],
-                    'elite':recordItem[16],
-                    'created':recordItem[17]
+                    'post_type':recordItem[10],
+                    'author_id':recordItem[11],
+                    'author_username':recordItem[12],
+                    'star_num':recordItem[13],
+                    'reply_num':recordItem[14],
+                    'elite':recordItem[15],
+                    'created':recordItem[16]
                 }
                 res = es.index(index=esindex, doc_type=estype, id=recordItem[1], body=doc)
                 print('add/update post record %s => %s' %(recordItem[1],res))

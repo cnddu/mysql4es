@@ -45,7 +45,7 @@ def init_user(esindex,es,syncid_user,dbuser,dbhost,dbpwd,dbname):
     cursor.execute(manageUserTriggers)
 
     manageUserTriggers = ("CREATE TRIGGER synces_user_insert \
-        AFTER INSERT ON user \
+        AFTER INSERT ON a2user \
         FOR EACH ROW \
         INSERT INTO synces_user (recordid,timestamp, opcode, username, nickname, avatar, description, `key`,level,reg_time,key_time,position,company,homepage,city,star_num,view_num,docs_num,stars_num,following_num,followers_num,booklist_num,followbooklist_num) \
         VALUES (NEW.id, UNIX_TIMESTAMP(), 1, NEW.username, NEW.nickname, NEW.avatar, NEW.description, NEW.key,NEW.level,NEW.reg_time,NEW.key_time,NEW.position,NEW.company,NEW.homepage,NEW.city,NEW.star_num,NEW.view_num,NEW.docs_num,NEW.stars_num,NEW.following_num,NEW.followers_num,NEW.booklist_num,NEW.followbooklist_num) \
@@ -56,7 +56,7 @@ def init_user(esindex,es,syncid_user,dbuser,dbhost,dbpwd,dbname):
     cursor.execute(manageUserTriggers)
 
     manageUserTriggers = ("CREATE TRIGGER synces_user_update \
-        AFTER UPDATE ON user \
+        AFTER UPDATE ON a2user \
         FOR EACH ROW \
         INSERT INTO synces_user (recordid,timestamp, opcode, username, nickname, avatar, description, `key`,level,reg_time,key_time,position,company,homepage,city,star_num,view_num,docs_num,stars_num,following_num,followers_num,booklist_num,followbooklist_num) \
         VALUES (NEW.id, UNIX_TIMESTAMP(), 2, NEW.username, NEW.nickname, NEW.avatar, NEW.description, NEW.key,NEW.level,NEW.reg_time,NEW.key_time,NEW.position,NEW.company,NEW.homepage,NEW.city,NEW.star_num,NEW.view_num,NEW.docs_num,NEW.stars_num,NEW.following_num,NEW.followers_num,NEW.booklist_num,NEW.followbooklist_num) \
@@ -67,14 +67,14 @@ def init_user(esindex,es,syncid_user,dbuser,dbhost,dbpwd,dbname):
     cursor.execute(manageUserTriggers)
 
     manageUserTriggers = ("CREATE TRIGGER synces_user_delete \
-        BEFORE DELETE ON user \
+        BEFORE DELETE ON a2user \
         FOR EACH ROW \
         INSERT INTO synces_user (recordid,timestamp, opcode, username, nickname, avatar, description,`key`,level,reg_time,key_time,position,company,homepage,city,star_num,view_num,docs_num,stars_num,following_num,followers_num,booklist_num,followbooklist_num) \
         VALUES (OLD.id, UNIX_TIMESTAMP(), 3, OLD.username, OLD.nickname, OLD.avatar, OLD.description,OLD.key,OLD.level,OLD.reg_time,OLD.key_time,OLD.position,OLD.company,OLD.homepage,OLD.city,OLD.star_num,OLD.view_num,OLD.docs_num,OLD.stars_num,OLD.following_num,OLD.followers_num,OLD.booklist_num,OLD.followbooklist_num) \
     ")
     cursor.execute(manageUserTriggers)
 
-    queryRecords = ("SELECT * FROM user")
+    queryRecords = ("SELECT * FROM a2user")
     cursor.execute(queryRecords)
     records = cursor.fetchall()
 
@@ -131,7 +131,7 @@ def init_user(esindex,es,syncid_user,dbuser,dbhost,dbpwd,dbname):
             #    docexist = e.info['found']
             #time.sleep(10000);
             doc = {
-                'userid':recordItem[0],
+                'id':recordItem[0],
                 'username':recordItem[1],
                 'nickname':recordItem[7],
                 'avatar':recordItem[2],
@@ -162,7 +162,7 @@ def init_user(esindex,es,syncid_user,dbuser,dbhost,dbpwd,dbname):
 
     return syncid_user
 
-def job_user(syncid_user,dbuser,dbhost,dbpwd,dbname,es):
+def job_user(syncid_user,dbuser,dbhost,dbpwd,dbname,es,esindex):
     cnx = mysql.connector.connect(user=dbuser, host=dbhost, password=dbpwd, database=dbname, connection_timeout=100)
     cursor = cnx.cursor()
 
@@ -179,7 +179,7 @@ def job_user(syncid_user,dbuser,dbhost,dbpwd,dbname,es):
             print(recordItem)
             if (recordItem[3] == 1) or (recordItem[3] == 2): #insert
                 doc = {
-                    'userid':recordItem[1],
+                    'id':recordItem[1],
                     'username':recordItem[4],
                     'nickname':recordItem[5],
                     'avatar':recordItem[6],

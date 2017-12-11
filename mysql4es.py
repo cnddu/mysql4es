@@ -48,13 +48,19 @@ def reset_esindex(esindex):
 
 
 def job():
-    global syncid_user,syncid_post,dbuser,dbhost,dbpwd,dbname,es
+    global syncid_user,syncid_post,syncid_booklist,syncid_tag,dbuser,dbhost,dbpwd,dbname,es,esindex
     print('start job ====> user')
-    syncid_user = job_user(syncid_user,dbuser,dbhost,dbpwd,dbname,es)
+    syncid_user = job_user(syncid_user,dbuser,dbhost,dbpwd,dbname,es,esindex)
     print('end job <==== user')
     print('start job ====> post')
-    syncid_post = job_post(syncid_post,dbuser,dbhost,dbpwd,dbname,es)
+    syncid_post = job_post(syncid_post,dbuser,dbhost,dbpwd,dbname,es,esindex)
     print('end job <==== post')
+    print('start job ====> booklist')
+    syncid_booklist = job_booklist(syncid_booklist,dbuser,dbhost,dbpwd,dbname,es,esindex)
+    print('end job <==== booklist')
+    print('start job ====> tag')
+    syncid_tag = job_tag(syncid_tag,dbuser,dbhost,dbpwd,dbname,es,esindex)
+    print('end job <==== tag')
 
 #main
 reset_esindex(esindex)

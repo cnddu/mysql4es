@@ -36,7 +36,7 @@ def init_booklist(esindex,es,syncid_booklist,dbuser,dbhost,dbpwd,dbname):
     cursor.execute(manageBooklistTriggers)
 
     manageBooklistTriggers = ("CREATE TRIGGER synces_booklist_insert \
-        AFTER INSERT ON booklist \
+        AFTER INSERT ON a2booklist \
         FOR EACH ROW \
         INSERT INTO synces_booklist (recordid,timestamp, opcode, title, description, uuid,cover,author_id,post_num,follow_num,reply_num,elite,updated,created) \
         VALUES (NEW.id, UNIX_TIMESTAMP(), 1, NEW.title, NEW.description, NEW.uuid,NEW.cover,NEW.author_id,NEW.post_num,NEW.follow_num,NEW.reply_num,NEW.elite,NEW.updated,NEW.created) \
@@ -47,7 +47,7 @@ def init_booklist(esindex,es,syncid_booklist,dbuser,dbhost,dbpwd,dbname):
     cursor.execute(manageBooklistTriggers)
 
     manageBooklistTriggers = ("CREATE TRIGGER synces_booklist_update \
-        AFTER UPDATE ON booklist \
+        AFTER UPDATE ON a2booklist \
         FOR EACH ROW \
         INSERT INTO synces_booklist (recordid,timestamp, opcode, title, description, uuid,cover,author_id,post_num,follow_num,reply_num,elite,updated,created) \
         VALUES (NEW.id, UNIX_TIMESTAMP(), 2, NEW.title, NEW.description, NEW.uuid,NEW.cover,NEW.author_id,NEW.post_num,NEW.follow_num,NEW.reply_num,NEW.elite,NEW.updated,NEW.created) \
@@ -58,14 +58,14 @@ def init_booklist(esindex,es,syncid_booklist,dbuser,dbhost,dbpwd,dbname):
     cursor.execute(manageBooklistTriggers)
 
     manageBooklistTriggers = ("CREATE TRIGGER synces_booklist_delete \
-        BEFORE DELETE ON booklist \
+        BEFORE DELETE ON a2booklist \
         FOR EACH ROW \
         INSERT INTO synces_booklist (recordid,timestamp, opcode, title, description, uuid,cover,author_id,post_num,follow_num,reply_num,elite,updated,created) \
         VALUES (OLD.id, UNIX_TIMESTAMP(), 3, OLD.title, OLD.description, OLD.uuid,OLD.cover,OLD.author_id,OLD.post_num,OLD.follow_num,OLD.reply_num,OLD.elite,OLD.updated,OLD.created) \
     ")
     cursor.execute(manageBooklistTriggers)
 
-    queryRecords = ("SELECT * FROM booklist")
+    queryRecords = ("SELECT * FROM a2booklist")
     cursor.execute(queryRecords)
     records = cursor.fetchall()
 
@@ -101,7 +101,7 @@ def init_booklist(esindex,es,syncid_booklist,dbuser,dbhost,dbpwd,dbname):
         if (records is not None):
             for recordItem in records:
                 doc = {
-                    'booklistid':recordItem[0],
+                    'id':recordItem[0],
                     'title':recordItem[2],
                     'description':recordItem[3],
                     'uuid':recordItem[1],
@@ -123,7 +123,7 @@ def init_booklist(esindex,es,syncid_booklist,dbuser,dbhost,dbpwd,dbname):
 
     return syncid_booklist
 
-def job_booklist(syncid_booklist,dbuser,dbhost,dbpwd,dbname,es):
+def job_booklist(syncid_booklist,dbuser,dbhost,dbpwd,dbname,es,esindex):
     cnx = mysql.connector.connect(user=dbuser, host=dbhost, password=dbpwd, database=dbname, connection_timeout=100)
     cursor = cnx.cursor()
 
@@ -140,7 +140,7 @@ def job_booklist(syncid_booklist,dbuser,dbhost,dbpwd,dbname,es):
             print(recordItem)
             if (recordItem[3] == 1) or (recordItem[3] == 2): #insert
                 doc = {
-                    'booklistid':recordItem[1],
+                    'id':recordItem[1],
                     'title':recordItem[4],
                     'description':recordItem[5],
                     'uuid':recordItem[6],
